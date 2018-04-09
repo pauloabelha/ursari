@@ -1,0 +1,11 @@
+Once you have been given access to the bbgpu QOS, then you need to add this to your job submission script:
+#SBATCH --qos bbgpu
+
+And, also you have to specify the type of GPU to send your job too:
+    Nvidia Tesla P100 (#SBATCH --gres gpu:p100:1)
+    Nvidia Tesla K20 (#SBATCH --gres gpu:k20:1)
+    Nvidia Quadro 5000 (#SBATCH --gres gpu:q5000:1)
+
+
+Regards,
+Simon

@@ -1,0 +1,4 @@
+Host bluebear
+        HostName bluebear.bham.ac.uk
+        ProxyCommand ssh -W %h:%p ferreipa@wallace.cs.bham.ac.uk  
+        User ferreipa

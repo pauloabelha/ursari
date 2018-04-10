@@ -72,13 +72,14 @@ source $CONFIG_FILE
 
 ######## ECHO INFO #########################
 echo "Debugging: "$DEBUG
-echo "QOS: "$QOS
 echo "Account: "$ACCOUNT
 echo "Use GPU: "$USE_GPU
 if [ $USE_GPU = "yes" ]
 then
+	QOS="bbgpu"
 	echo "GPU to use: "$GPU_TO_USE
 fi
+echo "QOS: "$QOS	
 echo "Error file: "$ERROR_FILE
 echo "Script to run: "$SCRIPT
 echo "Notify user by e-mail: "$EMAIL_NOTIFICATION
@@ -89,12 +90,10 @@ touch $WRAP_SCRIPT
 echo '#!/bin/bash' > $WRAP_SCRIPT
 echo "" >> $WRAP_SCRIPT
 echo "#SBATCH --account="$ACCOUNT >> $WRAP_SCRIPT
+echo "#SBATCH --qos "$QOS >> $WRAP_SCRIPT
 if [ $USE_GPU = "yes" ];
 then
-	echo "#SBATCH --qos bbgpu" >> $WRAP_SCRIPT
 	echo "#SBATCH --gres gpu:$GPU_TO_USE:1" >> $WRAP_SCRIPT
-else
-	echo "#SBATCH --qos "$QOS >> $WRAP_SCRIPT
 fi
 echo "#SBATCH --error="$ERROR_FILE >> $WRAP_SCRIPT
 
@@ -102,10 +101,13 @@ echo "#SBATCH --error="$ERROR_FILE >> $WRAP_SCRIPT
 echo "module purge; module load bluebear" >> $WRAP_SCRIPT
 echo "Python modules to load:"
 MODULE_COMMAND_BASE="module load apps/"
+PYTHON_VERSION="3.5.2"
+PYTHON_VERSION_CMD="-python-$PYTHON_VERSION"
+echo "module load bear-apps/2018a" >> $WRAP_SCRIPT
+echo "module load Python/$PYTHON_VERSION-iomkl-2018a" >> $WRAP_SCRIPT
 GPU_MODULE="-cuda-8.0.44"
-PYTHON_VERSION="-python-3.5.2"
-TORCH_MODULE="pytorch/0.2.0"$PYTHON_VERSION
-TORCHVISION_MODULE="torchvision/0.1.9"$PYTHON_VERSION
+TORCH_MODULE="pytorch/0.2.0"$PYTHON_VERSION_CMD
+TORCHVISION_MODULE="torchvision/0.1.9"$PYTHON_VERSION_CMD
 IFS=';' read -ra ADDR <<< "$PYTHON_MODULES"
 for i in "${ADDR[@]}"; do
         echo -e "\t"$i

@@ -80,7 +80,7 @@ then
 	echo "GPU to use: "$GPU_TO_USE
 fi
 echo "QOS: "$QOS	
-echo "Error file: "$ERROR_FILE
+echo "File for logging error: "$ERROR_FILE
 echo "Script to run: "$SCRIPT
 echo "Notify user by e-mail: "$EMAIL_NOTIFICATION
 
@@ -91,45 +91,66 @@ echo '#!/bin/bash' > $WRAP_SCRIPT
 echo "" >> $WRAP_SCRIPT
 echo "#SBATCH --account="$ACCOUNT >> $WRAP_SCRIPT
 echo "#SBATCH --qos "$QOS >> $WRAP_SCRIPT
+
+######### GPU ##############################
 if [ $USE_GPU = "yes" ];
 then
+	GPU_MODULE="-cuda-8.0.44"
 	echo "#SBATCH --gres gpu:$GPU_TO_USE:1" >> $WRAP_SCRIPT
 fi
 echo "#SBATCH --error="$ERROR_FILE >> $WRAP_SCRIPT
 
 ######### MODULE LOADING ##################
 echo "module purge; module load bluebear" >> $WRAP_SCRIPT
-echo "Python modules to load:"
 MODULE_COMMAND_BASE="module load apps/"
-PYTHON_VERSION="3.5.2"
-PYTHON_VERSION_CMD="-python-$PYTHON_VERSION"
-echo "module load bear-apps/2018a" >> $WRAP_SCRIPT
-echo "module load Python/$PYTHON_VERSION-iomkl-2018a" >> $WRAP_SCRIPT
-GPU_MODULE="-cuda-8.0.44"
-TORCH_MODULE="pytorch/0.2.0"$PYTHON_VERSION_CMD
-TORCHVISION_MODULE="torchvision/0.1.9"$PYTHON_VERSION_CMD
-IFS=';' read -ra ADDR <<< "$PYTHON_MODULES"
-for i in "${ADDR[@]}"; do
-        echo -e "\t"$i
-        if [ $i == "torch" ]
-        then
-            	if [ $USE_GPU = "yes" ]
-                then
-                    	echo $MODULE_COMMAND_BASE$TORCH_MODULE$GPU_MODULE >> $WRAP_SCRIPT
-                else
-                    	echo $MODULE_COMMAND_BASE$TORCH_MODULE >> $WRAP_SCRIPT
+
+######### ----> PYTHON ####################
+if [ $USE_PYTHON == "yes" ]
+then
+	# python version for pytorch might conflict with requried python version; check this here
+	PYTHON_TORCH_VERSION="3.6.3"
+	if ! [[ "$PYTHON_TORCH_VERSION" == "$PYTHON_VERSION" ]]
+	then
+		echo "WARNING! PyTorch required Python version ($PYTHON_TORCH_VERSION) is different than specified Python version ($PYTHON_VERSION)"
+		echo "Please check your config file"
+		#exit 1
+	fi
+	echo "Python modules to load:"
+	PYTHON_VERSION_CMD="-python-$PYTHON_VERSION"
+	echo "module load bear-apps/2018a" >> $WRAP_SCRIPT
+	echo "module load Python/$PYTHON_VERSION-iomkl-2018a" >> $WRAP_SCRIPT
+	TORCH_MODULE="pytorch/0.2.0-python-$PYTHON_TORCH_VERSION"
+	TORCHVISION_MODULE="torchvision/0.1.9-python-$PYTHON_TORCH_VERSION"
+	IFS=';' read -ra ADDR <<< "$PYTHON_MODULES"
+	for i in "${ADDR[@]}"; do
+        	echo -e "\t"$i
+	        if [ $i == "torch" ]
+        	then
+	            	if [ $USE_GPU = "yes" ]
+	                then
+	                    	echo $MODULE_COMMAND_BASE$TORCH_MODULE$GPU_MODULE >> $WRAP_SCRIPT
+	                else
+	                    	echo $MODULE_COMMAND_BASE$TORCH_MODULE >> $WRAP_SCRIPT
+	                fi
+	        fi
+		if [ $i == "torchvision" ]
+	        then
+	                if [ $USE_GPU = "yes" ]
+	                then
+	                    	echo $MODULE_COMMAND_BASE$TORCHVISION_MODULE$GPU_MODULE >> $WRAP_SCRIPT
+	                else
+	                    	echo $MODULE_COMMAND_BASE$TORCHVISION_MODULE >> $WRAP_SCRIPT
+	                fi
+	        fi
+		if [ $i == "matplotlib" ]
+               	then
+                        echo "module load matplotlib/2.1.1-iomkl-2018a-Python-$PYTHON_VERSION" >> $WRAP_SCRIPT
                 fi
-        fi
-	if [ $i == "torchvision" ]
-        then
-                if [ $USE_GPU = "yes" ]
-                then
-                    	echo $MODULE_COMMAND_BASE$TORCHVISION_MODULE$GPU_MODULE >> $WRAP_SCRIPT
-                else
-                    	echo $MODULE_COMMAND_BASE$TORCHVISION_MODULE >> $WRAP_SCRIPT
-                fi
-        fi
-done
+	done
+else
+	echo "Not using Python"
+fi
+
 
 ######## NOTIFICATIONS #####################
 if [ $EMAIL_NOTIFICATION = "yes" ]

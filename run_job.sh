@@ -108,7 +108,7 @@ MODULE_COMMAND_BASE="module load apps/"
 if [ $USE_PYTHON == "yes" ]
 then
 	# python version for pytorch might conflict with requried python version; check this here
-	PYTHON_TORCH_VERSION="3.6.3"
+	PYTHON_TORCH_VERSION="3.5.2"
 	if ! [[ "$PYTHON_TORCH_VERSION" == "$PYTHON_VERSION" ]]
 	then
 		echo "WARNING! PyTorch required Python version ($PYTHON_TORCH_VERSION) is different than specified Python version ($PYTHON_VERSION)"

@@ -1,0 +1,5 @@
+name: audio_env
+channels:
+- defaults
+prefix: /home/paulo/anaconda3/envs/audio_env
+
